@@ -1,0 +1,40 @@
+name: Shorts Maker
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "YouTube link"
+        required: true
+      count:
+        description: "Kitni Shorts"
+        default: "3"
+      duration:
+        description: "Har Short lagbhag kitne second"
+        default: "45"
+
+jobs:
+  make:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-noto-core
+          pip install -U "yt-dlp[default]" faster-whisper anthropic
+      - name: Make Shorts
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          URL: ${{ inputs.url }}
+          COUNT: ${{ inputs.count }}
+          DURATION: ${{ inputs.duration }}
+        run: python shorts_maker.py "$URL" -n "$COUNT" -d "$DURATION"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shorts
+          path: shorts_out/short_*.mp4
